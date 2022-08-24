@@ -352,9 +352,13 @@ def make_chemdf(re_table, ofname):
     spec_list = []
         
     ofstr = """#!/usr/bin/python\n\n# import public libraries\nfrom scipy import *\nimport numpy as np\nimport os"""
-    ofstr += """\n\n# import VULCAN libraries\n\nvulcanFrameworkDirPath = os.path.dirname(os.path.realpath(__file__))\nfrom phy_const import kb, Navo\nimport vulcan_cfg\n\n"""    
+    ofstr += """\n\n# import VULCAN libraries\n\nvulcanFrameworkDirPath = os.path.dirname(os.path.realpath(__file__))\nfrom phy_const import kb, Navo\nimport vulcan_cfg\n\n"""
+    ofstr += """\n## Reaction ##\n\n"""
+    ofstr += re_table + "\n\n"
+
 
     ofstr += "## Mapping ##\n\n"
+    
     for term in chem_dict:
         chem_dict_r.update({chem_dict[term] : term})
     for term in reac_dict:
