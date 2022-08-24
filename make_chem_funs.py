@@ -353,7 +353,7 @@ def make_chemdf(re_table, ofname):
         
     ofstr = """#!/usr/bin/python\n\n# import public libraries\nfrom scipy import *\nimport numpy as np\nimport os"""
     ofstr += """\n\n# import VULCAN libraries\n\nvulcanFrameworkDirPath = os.path.dirname(os.path.realpath(__file__))\nfrom phy_const import kb, Navo\nimport vulcan_cfg\n\n"""
-    ofstr += """\n## Reaction ##\n\n"""
+    ofstr += """'''\n## Reaction ##\n\n"""
     ofstr += re_table + "\n\n"
 
 
