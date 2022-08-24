@@ -112,8 +112,9 @@ class vulcanController:
 
         Returns: null
         """
+        if os.path.exists(self.cfgFilePath):
+            os.remove(self.cfgFilePath)
 
-        os.remove(self.cfgFilePath)
         cfgFile = open(self.cfgFilePath, 'w')
         cfgFile.close()
         return
