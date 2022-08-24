@@ -20,20 +20,24 @@ from chem_funs import ni, nr, spec_list  # number of species and reactions in th
 #@jitclass(spec_var)
 class Variables(object):
     """
-    store the essential variables for calculation  
+    store the essential variables for calculation, information here will be saved under output
     """
-    def __init__(self): # self means the created object instance
-        self.k = {}  # rate coefficients: k[1] is the rate constant of R1 reaction at every level (same shape as Tco and pco)
-        self.y = np.zeros((nz, ni)) # current number density in the shape of (number of vertical levels, number of species)
-        self.y_prev = np.zeros((nz, ni)) # number density at the previous step
-        self.ymix = np.zeros((nz, ni)) # current mixing ratios
-        self.y_ini = np.zeros((nz, ni)) # the initial number density 
-        self.t = 0 # integration time
-        self.dt = vulcan_cfg.dttry # time step
-        self.dy = 1. # the max change of y from the previous step to current step 
-        self.dy_prev = 1. # the max change of y from i-2 step to i-1 step 
-        self.dydt = 1. # the max change of dy/dt
-        self.longdy = 1. # the max change of y over a period of time 
+    def __init__(self):                         # self means the created object instance
+        self.k = {}                             # rate coefficients: k[1] is the rate constant of R1 reaction at every level (same shape as Tco and pco)
+
+        self.y = np.zeros((nz, ni))             # current number density in the shape of (number of vertical levels, number of species)
+        self.y_prev = np.zeros((nz, ni))        # number density at the previous step
+        self.ymix = np.zeros((nz, ni))          # current mixing ratios
+        self.y_ini = np.zeros((nz, ni))         # the initial number density
+
+        self.t = 0                              # integration time
+        self.dt = vulcan_cfg.dttry              # time step
+
+        self.dy = 1.                            # the max change of y from the previous step to current step 
+        self.dy_prev = 1.                       # the max change of y from i-2 step to i-1 step 
+        self.dydt = 1.                          # the max change of dy/dt
+        self.longdy = 1.                        # the max change of y over a period of time 
+
         # for checking the steady state (dn in (10) in Tsai et al 2017)
         self.longdydt = 1. # the max change of dy/dt over a period of time 
         # (dn/dt in (11) in Tsai et al 2017)
@@ -80,12 +84,16 @@ class Variables(object):
         self.def_bin_max = min(sflux_data['lambda'][-1],700.)
 
         # Define what variables to save in the output file!
-        self.var_save = ['k','y','ymix','y_ini','t','dt','longdy','longdydt',\
-        'atom_ini','atom_sum','atom_loss','atom_conden','aflux_change','Rf'] 
-        if vulcan_cfg.use_photo == True: 
+        if vulcan_cfg.var_save_mode == 'lite':
+            self.var_save = vulcan_cfg.var_save_lite
+        else:
+            self.var_save = vulcan_cfg.var_save_full
+        if vulcan_cfg.use_photo:
             self.var_save.extend(['nbin','bins','dbin1','dbin2','tau','sflux','aflux','cross','cross_scat','cross_J', 'J_sp','n_branch'])
-            if vulcan_cfg.T_cross_sp: self.var_save.extend(['cross_J','cross_T'])
-            if vulcan_cfg.use_ion == True: self.var_save.extend(['charge_list', 'ion_sp', 'cross_Jion','Jion_sp', 'ion_wavelen','ion_branch','ion_br_ratio'])
+            if vulcan_cfg.T_cross_sp: 
+                self.var_save.extend(['cross_J','cross_T'])
+            if vulcan_cfg.use_ion: 
+                self.var_save.extend(['charge_list', 'ion_sp', 'cross_Jion','Jion_sp', 'ion_wavelen','ion_branch','ion_br_ratio'])
         # 'ion_list' stores all the non-neutral species in build.atm whereas 'ion_sp' is for the species that actually have ionisation reactions in the network 
         self.var_evol_save = ['y_time','t_time']
         self.conden_re_list = []
@@ -110,7 +118,7 @@ class Variables(object):
 
 class AtmData(object):
     """
-    store the data of atmospheric structure  
+    store the data of atmospheric structure, information here will be saved under output
     """
     def __init__(self):
         self.pco = np.logspace(np.log10(vulcan_cfg.P_b),np.log10(vulcan_cfg.P_t),nz) # pressure grids
@@ -175,21 +183,23 @@ class AtmData(object):
 
 class Parameters(object):
     """
-    store the overall parameters for numerical method and counters  
+    store the overall parameters for numerical method and counters, information here will be saved under output
     """
     def __init__(self):
         self.nega_y = 0
         self.small_y = 0
         self.delta = 0
-        self.count = 0  # number of steps taken
-        self.nega_count =0
+        self.count = 0                                  # number of steps taken
+        self.nega_count = 0
         self.loss_count = 0
         self.delta_count= 0
         self.end_case = 0
-        self.solver_str = '' # for assigning the name of solver
+        self.solver_str = ''                            # for assigning the name of solver
         self.switch_final_photo_frq = False
-        self.where_varies_most = np.zeros((nz, ni)) # recording from where and what species flucating from convergence
-        self.pic_count = 0 # for live plotting
+        self.where_varies_most = np.zeros((nz, ni))     # recording from where and what species flucating from convergence
+        self.pic_count = 0                              # for live plotting
+        self.start_times = []                           # CPU times for starting a key procedure,
+                                                        # format = list of tuples, [ ('event', time) ]
         
         #TEST
         self.fix_species_start = False
