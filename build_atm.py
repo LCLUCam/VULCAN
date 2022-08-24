@@ -1,3 +1,7 @@
+"""
+Support script called by runVulcan.py to initialize or build an atmosphere before starting integration.
+"""
+
 # import public modules
 import numpy as np
 from numpy import polynomial

@@ -1,3 +1,11 @@
+"""
+Main script executed when performing an individual vulcan column run, called by vulcanController.py.
+
+This script is self-sufficient in the sense that it is possible to run this file to test vulcan 
+without invoking other modules provided the correct configrations are encoded in the vulcan_cfg.py file 
+that needs to be created by the user.
+"""
+
 ##### =============== import public modules =============== #####
 import numpy as np
 import matplotlib.pyplot as plt

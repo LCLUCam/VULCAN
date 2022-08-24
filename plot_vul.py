@@ -1,3 +1,7 @@
+"""
+Called by runVulcan.py at the very end to plot output data.
+"""
+
 # import public libraries
 import numpy as np
 import matplotlib.pyplot as plt

@@ -1,3 +1,15 @@
+"""
+Script to make chemical network, called by runVulcan.py at the beginning with the following criteria:
+    -   At the beginning of each vulcan run, i.e., when propagating forwards in time, the user has the option to re-build the chemical network or not.
+        The rationale is that in future versions of SCUM, there could be the capability to identify missing reactions and seek parameters for them, so
+        a new network might need to be built.
+    -   For now, in between inidivual vulcan column runs, the chemical network will not be re-made (coded in vulcanController.py) to save computational time. 
+        Again, for larger worlds, different parts of the atmosphere may experience different chemical reactions requiring different networks, so this might be 
+        relaxed in future versions.
+Warning:    Do not directly modify chem_funs.py without properly understanding the code. Original VULCAN is desiged on the brilliant philosophy of writting strings to a textfile,
+            before converting to a .py file to be imported.
+"""
+
 #!/usr/bin/python
 
 # import public libraries

@@ -1,3 +1,30 @@
+"""
+This script serves as the interface between masterController.py and runVulcan.py, and it essentially contains two classes.
+
+Creating an instance of the vulcanController class in masterController provides the user with two options:
+    1. Propagate the upper atmopshere (simulated by Vulcan) forwards in time for a specific duration
+    2. Request for the latest data output to be exported to masterController for the other modules
+
+For S/N 1 - propagation, the controller performs the following key tasks:
+    1.  sort out directories
+    2.  consolidates all inputs,
+            - high level parameters as determined by the user, see self.readModelParametersVulcan()
+            - fine-tuning of the model as instructed by masterController.py
+            - initial conditions passed from other modules
+        
+        which are saved into a vulcan_cfg.py file (auto generated) that will be read by runVulcan.py when performing numerical
+        integration for a certain vulcan column
+    3.  after vulcan_cfg.py is prepared, it is checked against previous vulcan_cfg.py files from previous runs for similarities
+        to decide whether to skip the run and copy previous output depending on a set of criteria that can be evolved from being identical (present)
+    4.  commands invidual vulcan column runs, keeps track etc.
+    5.  all the while, key vulcan events are logged in a text file located in output/
+
+For S/N 2 - data export
+    1.  extract information from the latest vulcan output for all the columns
+    2.  translate to "standard form", as agreed and to be confirmed with the other module requirements
+    
+"""
+
 from doctest import master
 import os, shutil, sys, time, subprocess
 import json, pickle
