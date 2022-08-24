@@ -19,9 +19,9 @@ sys.path.append(vulcan_framework_dir)
 import vulcan_cfg
 from phy_const import kb, Navo, r_sun, au
 from vulcan_cfg import nz
-import chem_funs_old
-from chem_funs_old import ni
-species = chem_funs_old.spec_list
+import chem_funs
+from chem_funs import ni
+species = chem_funs.spec_list
 
 
 ### read in the basic chemistry data

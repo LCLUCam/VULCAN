@@ -718,7 +718,7 @@ def make_neg_jac(ni, nr, ofname):
     with open (ofname, 'a+') as f: f.write(jstr)
     
 def check_conserv():
-    from chem_funs_old import re_dict
+    from chem_funs import re_dict
     conserv_check = True
     compo = np.genfromtxt(vulcan_cfg.com_file,names=True,dtype=None)
     compo_row = list(compo['species'])
@@ -748,7 +748,7 @@ def check_conserv():
         raise IOError ('\nVulcan - Elements are not conserved in the reaction. Check the network!\n')
             
 def check_duplicate(nr, photo_re_indx):
-    from chem_funs_old import re_wM_dict
+    from chem_funs import re_wM_dict
 
     if photo_re_indx >0: re_end = photo_re_indx-1
     else: re_end = nr
