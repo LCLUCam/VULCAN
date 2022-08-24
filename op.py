@@ -30,20 +30,20 @@ except ImportError:
     except: vulcan_cfg.use_PIL = False
 
 import build_atm
-import chem_funs_old
-from chem_funs_old import ni, nr  # number of species and reactions in the network
+import chem_funs
+from chem_funs import ni, nr  # number of species and reactions in the network
 
 from phy_const import kb, Navo, hc, ag0 # hc is used to convert to the actinic flux
 
 from vulcan_cfg import nz
 
 # imported functions 
-chemdf = chem_funs_old.chemdf
-neg_achemjac = chem_funs_old.neg_symjac
+chemdf = chem_funs.chemdf
+neg_achemjac = chem_funs.neg_symjac
 compo = build_atm.compo
 compo_row = build_atm.compo_row
 
-species = chem_funs_old.spec_list
+species = chem_funs.spec_list
 
 
 class ReadRate(object):
@@ -299,8 +299,8 @@ class ReadRate(object):
             if i in vulcan_cfg.remove_list:
                  var.k[i] = np.repeat(0.,nz)
             else:
-                var.k_fun[i] = lambda temp, mm, i=i: var.k_fun[i-1](temp, mm)/chem_funs_old.Gibbs(i-1,temp)
-                var.k[i] = var.k[i-1]/chem_funs_old.Gibbs(i-1,Tco)
+                var.k_fun[i] = lambda temp, mm, i=i: var.k_fun[i-1](temp, mm)/chem_funs.Gibbs(i-1,temp)
+                var.k[i] = var.k[i-1]/chem_funs.Gibbs(i-1,Tco)
             
             if np.any(var.k[i] > 1.e-6): print ('R' + str(i) + " " + var.Rf[i-1] +' :  ' + str(np.amax(var.k[i])) )
             if np.any(var.k[i-1] > 1.e-6): print ('R' + str(i-1) + " " + var.Rf[i-1] + ' :  ' + str(np.amax(var.k[i-1])) )        
