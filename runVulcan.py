@@ -30,7 +30,7 @@ if vulcan_cfg.remake_chem_funs:
 
 # import VULCAN modules
 import store, build_atm, op
-import phy_const, plot_vul, chem_funs
+import phy_const, plot_vul, chem_funs_old
 
 # print all for debuging
 np.set_printoptions(threshold=np.inf)

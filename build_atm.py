@@ -19,9 +19,9 @@ sys.path.append(vulcan_framework_dir)
 import vulcan_cfg
 from phy_const import kb, Navo, r_sun, au
 from vulcan_cfg import nz
-import chem_funs
-from chem_funs import ni
-species = chem_funs.spec_list
+import chem_funs_old
+from chem_funs_old import ni
+species = chem_funs_old.spec_list
 
 
 ### read in the basic chemistry data
@@ -139,7 +139,7 @@ class InitialAbun(object):
         # initial mixing ratios of the molecules
         
         ini_mol = self.ini_mol()
-        ini = np.zeros(chem_funs.ni)                            # constructing array with total number of species considered
+        ini = np.zeros(chem_funs_old.ni)                            # constructing array with total number of species considered
         y_ini = data_var.y
         gas_tot = data_atm.M
         charge_list = []                                        # list of charged species excluding echarge_list
@@ -251,7 +251,7 @@ class InitialAbun(object):
                         #data_var.y[conden_min_lev:,species.index(sp)] = (y_ini[conden_min_lev,species.index(sp)]/data_atm.n_0[conden_min_lev]) *data_atm.n_0[conden_min_lev:]
                         data_var.y[conden_min_lev:,species.index(sp)] = data_atm.sat_mix[sp][conden_min_lev] * data_atm.n_0[conden_min_lev:]  
                            
-            exc_conden = [_ for _ in range(chem_funs.ni) if species[_] not in vulcan_cfg.non_gas_sp]
+            exc_conden = [_ for _ in range(chem_funs_old.ni) if species[_] not in vulcan_cfg.non_gas_sp]
             ysum = np.sum(y_ini[:,exc_conden], axis=1).reshape((-1,1))
         else:
             ysum = np.sum(y_ini, axis=1).reshape((-1,1))
@@ -277,7 +277,7 @@ class InitialAbun(object):
     def ele_sum(self, data_var):
         
         for atom in self.atom_list:
-            data_var.atom_ini[atom] = np.sum([compo[compo_row.index(species[i])][atom] * data_var.y[:,i] for i in range(chem_funs.ni)])
+            data_var.atom_ini[atom] = np.sum([compo[compo_row.index(species[i])][atom] * data_var.y[:,i] for i in range(chem_funs_old.ni)])
             data_var.atom_loss[atom] = 0.
             data_var.atom_conden[atom] = 0.
             

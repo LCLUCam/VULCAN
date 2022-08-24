@@ -26854,4 +26854,3 @@ def neg_symjac(y, M, k):
     dfdy[indx[98], indx[97]] = -(0)
     dfdy[indx[98], indx[98]] = -(-k[1146])
     return dfdy 
-

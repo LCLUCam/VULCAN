@@ -10,7 +10,7 @@ import numpy as np
 import scipy
 import vulcan_cfg
 from vulcan_cfg import nz
-from chem_funs import ni, nr, spec_list  # number of species and reactions in the network
+from chem_funs_old import ni, nr, spec_list  # number of species and reactions in the network
 
 #from numba import jitclass
 #from numba import f8 # f8: float64 = double
