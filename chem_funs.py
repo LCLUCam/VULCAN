@@ -1,7 +1,13 @@
 #!/usr/bin/python
 
+# import public libraries
 from scipy import *
 import numpy as np
+import os
+
+# import VULCAN libraries
+
+vulcanFrameworkDirPath = os.path.dirname(os.path.realpath(__file__))
 from phy_const import kb, Navo
 import vulcan_cfg
 

@@ -1,14 +1,16 @@
 #!/usr/bin/python
 
+# import public libraries
 import sys, os
 import numpy as np
-import vulcan_cfg
-# for constructing the symbolic Jacobian matrix
-from sympy import sin, cos, Matrix
+
+from sympy import sin, cos, Matrix              # for constructing the symbolic Jacobian matrix
 from sympy import Symbol
 from sympy import lambdify
 
-ofname = 'chem_funs.py'
+# import VULCAN libraries
+import vulcan_cfg
+ofname = os.path.join(vulcan_cfg.vulcan_framework_dir, 'chem_funs.py')
 gibbs_text = vulcan_cfg.gibbs_text
 
 
@@ -43,7 +45,7 @@ def read_network():
                 re_label = '#S'
                 
             elif line.startswith("# condensation"): 
-                print ('Including condensation reactions.')
+                print ('Vulcan - Including condensation reactions.')
                 special_re = False # switch to reactions with special forms (hard coded)
                 #conden_re = True                   
                 re_label = '#C'
@@ -349,9 +351,8 @@ def make_chemdf(re_table, ofname):
     chem_dict_r = {}
     spec_list = []
         
-    ofstr = "#!/usr/bin/python\n\nfrom scipy import *\nimport numpy as np\nfrom phy_const import kb, Navo\nimport vulcan_cfg\n\n"
-    ofstr += "'''\n## Reaction ##\n\n"
-    ofstr += re_table + "\n\n"
+    ofstr = """#!/usr/bin/python\n\n# import public libraries\nfrom scipy import *\nimport numpy as np\nimport os"""
+    ofstr += """\n\n# import VULCAN libraries\n\nvulcanFrameworkDirPath = os.path.dirname(os.path.realpath(__file__))\nfrom phy_const import kb, Navo\nimport vulcan_cfg\n\n"""    
 
     ofstr += "## Mapping ##\n\n"
     for term in chem_dict:
@@ -738,13 +739,13 @@ def check_conserv():
             prod_atoms += np.array(list(compo[compo_row.index(sp)])[1:num_atoms+1])
         
         if not np.all(reac_atoms == prod_atoms):
-            print ('Re ' + str(re) + ' not conserving element!')
+            print ('Vulcan - Re ' + str(re) + ' not conserving element!')
             conserv_check = False
             
     if conserv_check == True: 
-        print ('Elements conserved in the network.')
+        print ('Vulcan - Elements conserved in the network.')
     else:
-        raise IOError ('\nElements are not conserved in the reaction. Check the network!\n')
+        raise IOError ('\nVulcan - Elements are not conserved in the reaction. Check the network!\n')
             
 def check_duplicate(nr, photo_re_indx):
     from chem_funs import re_wM_dict
@@ -761,9 +762,9 @@ def check_duplicate(nr, photo_re_indx):
                     dup_check = True
                     if {re,re_oth} not in dup_list: 
                         dup_list.append({re,re_oth})
-                        print ('Re' + str(re) + ' and '+ 'Re' + str(re_oth) +   ' are duplicates!')
+                        print ('Vulcan - Re' + str(re) + ' and '+ 'Re' + str(re_oth) +   ' are duplicates!')
     
-    if not dup_list: print ('No duplicates in the network.')
+    if not dup_list: print ('Vulcan - No duplicates in the network.')
     
 # def make_rate_ans(spec_list, ofname):
 #     '''
@@ -804,11 +805,10 @@ if __name__ == "__main__":
     re_table, photo_table, photo_re_indx = read_network()
     (ni, nr, species) = make_chemdf(re_table, ofname)
     make_Gibbs(re_table, gibbs_text, ofname)
-    # import the "ofname" module as chemistry for make_jac to read df
-    chemistry = __import__(ofname[:-3])
-    make_jac(ni, nr, ofname) # the last function that writes into chem_funs.py
+    # chemistry = __import__(ofname[:-3])
+    chemistry = __import__('chem_funs')                             # import the "ofname" module as chemistry for make_jac to read df
+    make_jac(ni, nr, ofname)                                        # the last function that writes into chem_funs.py
     make_neg_jac(ni, nr, ofname)
     check_conserv()
-    check_duplicate(nr, photo_re_indx)
-    
+    check_duplicate(nr, photo_re_indx)    
     
