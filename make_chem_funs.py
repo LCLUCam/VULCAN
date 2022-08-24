@@ -18,7 +18,7 @@ gibbs_text = vulcan_cfg.gibbs_text
 # Re-arrange the numerbers in the network
 def read_network():
     
-    
+
     Rf, Rindx = {}, {}
     i = 1
     special_re, photo_re = False, False
@@ -810,7 +810,7 @@ if __name__ == "__main__":
     (ni, nr, species) = make_chemdf(re_table, ofname)
     make_Gibbs(re_table, gibbs_text, ofname)
     # chemistry = __import__(ofname[:-3])
-    chemistry = __import__('chem_funs')                             # import the "ofname" module as chemistry for make_jac to read df
+    chemistry = __import__('chem_funs.py')                             # import the "ofname" module as chemistry for make_jac to read df
     make_jac(ni, nr, ofname)                                        # the last function that writes into chem_funs.py
     make_neg_jac(ni, nr, ofname)
     check_conserv()
