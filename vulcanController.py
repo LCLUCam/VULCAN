@@ -25,26 +25,35 @@ For S/N 2 - data export
     
 """
 
+# ===== import public libraries ===== #
 from doctest import master
 import os, shutil, sys, time, subprocess
 import json, pickle
 import numpy as np
 import ast
 from types import SimpleNamespace
-
-class NumpyEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types, not currently used
-    """
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return json.JSONEncoder.default(self, obj)
+from enum import Enum
 
 
+# ===== enum ===== #
+class Modules(str, Enum):
+    MISTRA = 'MISTRA'
+    VULCAN = 'VULCAN'
+    PHREEQC = 'PHREEQC'
+    PERTURB = 'PERTURB'
+
+class directions(str, Enum):
+    IMPORT = 'IMPORT'
+    EXPORT = 'EXPORT'
+
+class runType(str, Enum):
+    INITIAL_RUN = 'INITIAL_RUN'
+    USE_LATEST_VUL = 'USE_LATEST_VUL'
+    EXPORT_ONLY = 'EXPORT_ONLY'
+    NO_RUN = "NO_RUN"
+
+
+# ===== vulcan controller class ===== #
 class vulcanController:
 
     def __init__(self, directories, controllerCfgVulcan, importCfgVulcan, vulcanRunType):
@@ -61,10 +70,10 @@ class vulcanController:
 
             importCfgVulcan (dict):         data from other modules, e.g., Mistra and perturbation, used to configure Vulcan
 
-            vulcanRunType (str):            'initialRun':       first time running Vulcan, virgin Vulcan
-                                            'useLatestVul':     not the first time, run with existing .vul data as initial conditions
-                                            'exportOnly':       do not run Vulcan, extract and export latest Vulcan runtime output data for other modules
-                                            'noRun':            configure but do not run Vulcan
+            vulcanRunType (str):            'INITIAL_RUN':       first time running Vulcan, virgin Vulcan
+                                            'USE_LATEST_VUL':     not the first time, run with existing .vul data as initial conditions
+                                            'EXPORT_ONLY':       do not run Vulcan, extract and export latest Vulcan runtime output data for other modules
+                                            'NO_RUN':            configure but do not run Vulcan
         """
 
         # ===== logs CPU time ===== #
@@ -96,7 +105,7 @@ class vulcanController:
         self._importCfgVulcan = importCfgVulcan
         
         # ===== export only ===== #
-        if vulcanRunType == 'exportOnly':
+        if vulcanRunType == runType.EXPORT_ONLY.name:
             return
         
         # ===== further configurations ===== #
@@ -114,7 +123,7 @@ class vulcanController:
         self.vulcanOutput()
 
         # execute, or not
-        if self.vulcanRunType == 'noRun':
+        if self.vulcanRunType == runType.NO_RUN.name:
             return
         else:
             self.runFullVulcan()
@@ -165,7 +174,7 @@ class vulcanController:
         """ creates vulcan runtime output folder, and creates vul-log.txt file within
         """
 
-        if self.vulcanRunType == 'initialRun':
+        if self.vulcanRunType == runType.INITIAL_RUN.name:
             if os.path.exists(self.outputDir):
                 shutil.rmtree(self.outputDir)
             if os.path.exists(self.VulcanRuntimeDir):
@@ -176,7 +185,7 @@ class vulcanController:
             # subprocess.call(['chmod', '-R', '+w', self.VulcanRuntimeDir])
             self.vulcanLog('w', f'Virgin Vulcan = False\n\nVulcan controller created: {self.controllerCreatedTime}\nVulcan Python interpreter: {sys.executable}\nVulcan initialized: {time.time()}\n')
 
-        elif not self.vulcanRunType == 'noRun':
+        elif not self.vulcanRunType == runType.NO_RUN.name:
             log = open(self.VulcanRuntimeLogFilePath, 'r')
             lines = log.readlines()
             runString = list(filter(lambda x: True if x.split(' ')[0] == 'Run' else False, lines))[-1]
@@ -268,7 +277,7 @@ class vulcanController:
                 S/N 3   vulcan directories:     i.e., dictionary of directories from VulcanDir.json from input
                 S/N 4   controllerCfgVulcan:    information from vulcanController and masterController
                 S/N 5   importCfgVulcan:        information from other modules, e.g., from Mistra
-                                                if vulcanRuntype = initialRun: read VulcanPopulator.json
+                                                if vulcanRuntype = INITIAL_RUN: read VulcanPopulator.json
 
             Args:
                 index (int):            tells you how many columns have been run within the vulcan run, 0-indexed
@@ -321,7 +330,7 @@ class vulcanController:
 
         combineDict = self.controllerCfgVulcan
 
-        if self.vulcanRunType == 'useLatestVul':
+        if self.vulcanRunType == runType.USE_LATEST_VUL.name:
             # at this point, assume we are just using previous column output data without changing anything (from other modules)
             combineDict['ini_mix'] = """'vulcan_ini'"""
             combineDict['atm_type'] = """'vulcan_ini'"""
@@ -333,9 +342,20 @@ class vulcanController:
 
             # pick the correct column, store the update dictionary in the vul-runtime output folder as a file named modify_atm.json
             for positionString, updateDict in self.importCfgVulcan.items():
-                if positionString == column:
+                translatePositionString = self.translateCol(directions.IMPORT.name, positionString)
+
+                if translatePositionString == column:
+
                     self.modifyAtmFilePath = os.path.join(self.VulcanRuntimeDir, f'{self.out_name}-run-{self.currentRunID}-modify_atm.json')
                     
+                    # perform translation, directions.IMPORT.name, when importing into VULCAN
+                    for key, value in updateDict.items():
+                        if "Height" in key:
+                            newValue = self.translateHeight(directions.IMPORT.name, value)
+                        elif "Pressure" in key:
+                            newValue = self.translateHeight(directions.IMPORT.name, value)
+                        updateDict[key] = newValue
+
                     file = open(self.modifyAtmFilePath, 'w')
                     json.dump(updateDict, file, indent=4)
 
@@ -347,7 +367,7 @@ class vulcanController:
                     combineDict['ini_mix'] = """'vulcan_ini_modify'"""
                     combineDict['atm_type'] = """'vulcan_ini_modify'"""
 
-        elif self.vulcanRunType == 'initialRun':
+        elif self.vulcanRunType == runType.INITIAL_RUN.name:
             for positionString, updateDict in self.vulcanPopulator.items():
                 for pos in positionString.replace(' ','').split(','):
                     if pos == column[1:]:
@@ -540,13 +560,13 @@ class vulcanController:
 
                             {   '200': 
                                     {'upperHeight': 5e5, 'lowerHeight': 2e5, 'levelTemperature': 300, \
-                                        'speciesNumberDensity': {'OH': 1e+17, 'H2O': 5e+13, ...}
+                                        'Number Density': {'OH': 1e+17, 'H2O': 5e+13, ...}
 
                                     },
                                 
                                 '211': 
                                     {'upperHeight': 5e5, 'lowerHeight': 2e5, 'levelTemperature': 300, \
-                                        'speciesNumberDensity': {'OH': 1e+17, 'H2O': 5e+13, ...}
+                                        'Number Density': {'OH': 1e+17, 'H2O': 5e+13, ...}
 
                                     }, ... other columns
                             }
@@ -578,22 +598,22 @@ class vulcanController:
 
                 heightList = vul_data['atm']['zco']
                 rawLowerHeight, rawUpperHeight = heightList[0], heightList[1]
-                rawColumnDict['upperHeight'] = rawUpperHeight          # divide by 1e5 to get km
-                rawColumnDict['lowerHeight'] = rawLowerHeight          # divide by 1e5 to get km
+                rawColumnDict['upperHeight'] = self.translateHeight(directions.EXPORT.name, rawUpperHeight)          # divide by 1e2 to get meters
+                rawColumnDict['lowerHeight'] = self.translateHeight(directions.EXPORT.name, rawLowerHeight)          # divide by 1e2 to get meters
 
                 pressureList = vul_data['atm']['pico']
                 rawLowerPressure, rawUpperPressure = pressureList[0], pressureList[1]                     # in 0.1 Pa
-                rawColumnDict['upperPressure'] = rawUpperPressure
-                rawColumnDict['lowerPressure'] = rawLowerPressure
+                rawColumnDict['upperPressure'] = self.translatePressure(directions.EXPORT.name, rawUpperPressure)
+                rawColumnDict['lowerPressure'] = self.translatePressure(directions.EXPORT.name, rawLowerPressure)
 
                 temperatureList = vul_data['atm']['Tco']
-                rawLevelTemperature = temperatureList[0]               # Kelvins
+                rawLevelTemperature = temperatureList[0]                                    # Kelvins
                 rawColumnDict['levelTemperature'] = rawLevelTemperature
 
                 rawSpDict = {}
                 for sp in vul_data['variable']['species']:
                     rawSpDict[sp] = vul_data['variable']['y'][:,vul_data['variable']['species'].index(sp)][0]
-                rawColumnDict['speciesNumberDensity'] = rawSpDict
+                rawColumnDict['Number Density'] = rawSpDict
 
                 rawOutputAll[column] = rawColumnDict
 
@@ -617,15 +637,15 @@ class vulcanController:
                 avgColumnDict['levelTemperature'] = avgLevelTemperature
 
                 # for species, get the longest key list
-                useSpCol = max(nearestListColumns, key=lambda col: len(rawOutputAll[col]['speciesNumberDensity'].keys()))       # i.e., if there are more species in one column, use that col
+                useSpCol = max(nearestListColumns, key=lambda col: len(rawOutputAll[col]['Number Density'].keys()))       # i.e., if there are more species in one column, use that col
                 
                 avgSpDict = {}
-                for sp in rawOutputAll[useSpCol]['speciesNumberDensity'].keys():
-                    avgSpDict[sp] = np.average([rawOutputAll[col]['speciesNumberDensity'][sp] for col in nearestListColumns])
-                avgColumnDict['speciesNumberDensity'] = avgSpDict
+                for sp in rawOutputAll[useSpCol]['Number Density'].keys():
+                    avgSpDict[sp] = np.average([rawOutputAll[col]['Number Density'][sp] for col in nearestListColumns])
+                avgColumnDict['Number Density'] = avgSpDict
                 avgColumnDict['index'] = 0
 
-                package[column] = avgColumnDict
+                package[self.translateColStrToTup(column)] = avgColumnDict
 
 
         elif user == 'perturbations':
@@ -647,14 +667,14 @@ class vulcanController:
                 upperHeight = list(filter(lambda x: True if x > height else False, heightList))[0]
                 lowerHeight = heightList[np.where(heightList == upperHeight)[0][0] - 1]
                 lowerHeightIndex = np.where(heightList == lowerHeight)[0][0]
-                columnDict['upperHeight'] = upperHeight
-                columnDict['lowerHeight'] = lowerHeight
+                columnDict['upperHeight'] = self.translateHeight(directions.EXPORT.name, upperHeight)
+                columnDict['lowerHeight'] = self.translateHeight(directions.EXPORT.name, lowerHeight)
 
                 pressureList = vul_data['atm']['pico']
-                lowerPressure = pressureList[lowerHeightIndex]                  # in 0.1 Pa
+                lowerPressure = pressureList[lowerHeightIndex]                 
                 upperPressure = pressureList[lowerHeightIndex + 1]
-                columnDict['upperPressure'] = upperPressure
-                columnDict['lowerPressure'] = lowerPressure
+                columnDict['upperPressure'] = self.translatePressure(directions.EXPORT.name, upperPressure)
+                columnDict['lowerPressure'] = self.translatePressure(directions.EXPORT.name, lowerPressure)
 
                 temperatureList = vul_data['atm']['Tco']
                 levelTemperature = temperatureList[lowerHeightIndex]            # Kelvins
@@ -664,23 +684,42 @@ class vulcanController:
                 for sp in vul_data['variable']['species']:
                     spDict[sp] = vul_data['variable']['y'][:,vul_data['variable']['species'].index(sp)][lowerHeightIndex]
 
-                columnDict['speciesNumberDensity'] = spDict
+                columnDict['Number Density'] = spDict
                 columnDict['index'] = int(lowerHeightIndex)
                 
-                package[columnInterest] = columnDict
+                package[self.translateCol(columnInterest)] = columnDict
         
         return package
 
 
-    # below, to be done later
-    def translateColumn(self, column):
-        return eval(f"""({','.join(column)})""")
+    # ===== section on translation ===== #
+    def translateCol(self, direction, col):
+        # VULCAN has column as string '202'
+        # universal standard has column as tuple of integers (2,0,2)
 
-    def translatePressure(self, pressure):
-        return pressure / 1e1
+        if direction == directions.EXPORT.name:
+            return eval(f"""({','.join(col)})""")
+        elif direction == directions.IMPORT.name:
+            return ''.join(col)
 
-    def translateHeight(self, pressure):
-        return pressure / 1e5
+       
+    def translatePressure(self, direction, pressure):
+        # VULCAN has pressure in 0.1 Pa
+
+        if direction == directions.EXPORT.name:
+            return pressure / 1e1
+        if direction == directions.IMPORT.name:
+            return pressure * 1e1
+
+
+    def translateHeight(self, direction, height):
+        # VULCAN has height such that you need to divide by 100 to get height in meters
+
+        if direction == directions.EXPORT.name:
+                return height / 1e2
+        if direction == directions.IMPORT.name:
+                return height * 1e2
+
 
     def translateSpecies(self, species):
         """
@@ -695,83 +734,63 @@ class vulcanController:
     @property
     def controllerCreatedTime(self):
         return self._controllerCreatedTime
-
     @property
     def masterDir(self):
         return self._masterDir
-    
     @property
     def inputDir(self):
         return self._inputDir
-
     @property
     def outputDir(self):
         return self._outputDir
-
     @property
     def globalParametersFilePath(self):
         return self._globalParametersFilePath
-
     @property
     def modelParametersFilePath(self):
         return self._modelParametersFilePath
-
     @property
     def vulcanPopulatorFilePath(self):
         return self._vulcanPopulatorFilePath
-
     @property
     def vulcanDirFilePath(self):
         return self._vulcanDirFilePath
-
     @property
     def cfgComparator(self):
         return self._cfgComparator
-
     @property
     def vulcanFrameworkDir(self):
         return self._vulcanFrameworkDir
-
     @property
     def cfgFilePath(self):
         return self._cfgFilePath
-
     @property
     def makeChemFuns(self):
         return self._makeChemFuns
-
     @property
     def VulcanRuntimeDir(self):
         return self._VulcanRuntimeDir
-
     @property
     def VulcanRuntimeLogFilePath(self):
         return self._VulcanRuntimeLogFilePath
-
     @property
     def globalParameters(self):
         return self._globalParameters
-
     @property
     def vulcanDir(self):
         return self._vulcanDir
-
     @property
     def vulcanPopulator(self):
         return self._vulcanPopulator
-
     @property
     def controllerCfgVulcan(self):
         return self._controllerCfgVulcan
-
     @property
     def importCfgVulcan(self):
         return self._importCfgVulcan
-
     @property
     def modelParametersVulcan(self):
         return self._modelParametersVulcan
-
     @property
     def vulcanRunType(self):
         return self._vulcanRunType
