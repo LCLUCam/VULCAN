@@ -586,7 +586,7 @@ class vulcanController:
         latestRunColumns = [path.split('-output.')[0].split(f'{latestOutputRunID}-')[1] for path in latestRunFilePaths]                           # all the columns, string
         latestRunZipped = zip(latestRunColumns, latestRunFilePaths)
 
-        if user == 'mistra':
+        if user == Modules.MISTRA.name:
 
             # pickle load everything and extract important informtion first: press, temp, height
             rawOutputAll = {}
@@ -648,12 +648,12 @@ class vulcanController:
                 package[self.translateColStrToTup(column)] = avgColumnDict
 
 
-        elif user == 'perturbations':
+        elif user == Modules.PERTURB.name:
             # returns heights and pressures (upper and lower bound), and temperature in that level
             # number density of all species at last time step
 
-            columnInterestList = args[0]        #   ['211', '202'], 5e5
-            height = args[1]
+            columnInterestList = [self.translateCol(directions.IMPORT.name, col) for col in args[0]]            # [ (2,1,1), (2,0,2) ], convert to string
+            height = self.translateHeight(directions.IMPORT.name, args[1])                                      # in meters, multiply by 1e2 before putting into VULCAN
 
             for columnInterest in columnInterestList:
                 columnDict = {}
@@ -687,7 +687,7 @@ class vulcanController:
                 columnDict['Number Density'] = spDict
                 columnDict['index'] = int(lowerHeightIndex)
                 
-                package[self.translateCol(columnInterest)] = columnDict
+                package[self.translateCol(directions.EXPORT.name, columnInterest)] = columnDict
         
         return package
 
