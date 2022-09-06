@@ -706,7 +706,7 @@ class vulcanController:
         if direction == directions.EXPORT.name:
             return eval(f"""({','.join(col)})""")
         elif direction == directions.IMPORT.name:
-            return ''.join(col)
+            return ''.join(list(col))
 
        
     def translatePressure(self, direction, pressure):
