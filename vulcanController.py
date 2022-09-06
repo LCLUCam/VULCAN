@@ -341,8 +341,18 @@ class vulcanController:
             combineDict['vul_ini_file_path'] = f"'{previousRunFilePath}'"
 
             # pick the correct column, store the update dictionary in the vul-runtime output folder as a file named modify_atm.json
-            for positionString, updateDict in self.importCfgVulcan.items():
-                translatePositionString = self.translateCol(directions.IMPORT.name, positionString)
+            for positionTuple, updateDict in self.importCfgVulcan.items():
+
+                # positionTuple from MISTRA in the form of (1,0,1) - integers
+                # positionTuplePlusOne in the form of (2,0,1) - integers, first number plus one
+                positionList = list(positionTuple)
+                positionList[0] = positionList[0] + 1
+                positionTuplePlusOne = tuple(positionList)
+                translatePositionString = self.translateCol(directions.IMPORT.name, positionTuplePlusOne)
+                
+                print(f'positionTuple: {positionTuple}')
+                print(f'positionList: {positionList}')
+                print(f'translatePositionString: {translatePositionString}')
 
                 if translatePositionString == column:
 
