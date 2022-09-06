@@ -584,7 +584,7 @@ class ReadRate(object):
         else: bins = np.arange(bin_min,bin_max, var.dbin1)
         var.bins = bins
         var.nbin = len(bins)
-        print("print slow 1")
+
         # all variables that depend on the size of nbins
         # the direct beam (staggered)
         var.sflux = np.zeros( (nz+1, var.nbin) )
@@ -594,12 +594,12 @@ class ReadRate(object):
         var.aflux = np.zeros( (nz, var.nbin) )
         # the total actinic flux from the previous calculation 
         prev_aflux = np.zeros( (nz, var.nbin) )
-        print("print slow 2")
+        
         # staggered
         var.tau = np.zeros( (nz+1, var.nbin) )
         # the stellar flux at TOA
         var.sflux_top = np.zeros(var.nbin)
-        print("print slow 3")
+        
         
         # read_cross
         # creat a dict of cross section with key=sp and values=bins in data_var
@@ -615,7 +615,7 @@ class ReadRate(object):
         
         #read cross of ionisation
         if vulcan_cfg.use_ion == True: var.cross_Jion = dict([((sp,i), np.zeros(var.nbin)) for sp in ion_sp for i in range(1,var.ion_branch[sp]+1)])
-        print("print slow 4")
+        
         for sp in photo_sp: # photodissociation only; photoionization takes a separate branch ratio file
             # for values outside the boundary => fill_value = 0
             inter_cross = interpolate.interp1d(cross_raw[sp]['lambda'], cross_raw[sp]['cross'], bounds_error=False, fill_value=0)
@@ -766,7 +766,7 @@ class ReadRate(object):
                     for i in range(1,var.ion_branch[sp]+1): 
                         var.cross_Jion[(sp,i)][n] = inter_cross_Jion(ld) * ion_inter_ratio[i](ld)
         # end of if vulcan_cfg.use_ion == True: 
-        print("print slow 5")
+        
         # reading in cross sections of Rayleigh Scattering
         for sp in vulcan_cfg.scat_sp:
             scat_raw[sp] = np.genfromtxt(vulcan_cfg.cross_folder + 'rayleigh/' + sp+'_scat.txt',dtype=float,\

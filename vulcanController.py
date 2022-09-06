@@ -689,7 +689,6 @@ class vulcanController:
                 
                 package[self.translateCol(directions.EXPORT.name, columnInterest)] = columnDict
         
-        print(package)
         return package
 
 
