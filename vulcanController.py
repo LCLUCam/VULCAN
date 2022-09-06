@@ -645,7 +645,7 @@ class vulcanController:
                 avgColumnDict['Number Density'] = avgSpDict
                 avgColumnDict['index'] = 0
 
-                package[self.translateCol(column)] = avgColumnDict
+                package[self.translateCol(directions.EXPORT.name, column)] = avgColumnDict
 
 
         elif user == Modules.PERTURB.name:
@@ -689,6 +689,7 @@ class vulcanController:
                 
                 package[self.translateCol(directions.EXPORT.name, columnInterest)] = columnDict
         
+        print(package)
         return package
 
 
