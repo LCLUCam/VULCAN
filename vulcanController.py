@@ -360,6 +360,8 @@ class vulcanController:
                             newValue = self.translateHeight(directions.IMPORT.name, value)
                         elif "Pressure" in key:
                             newValue = self.translateHeight(directions.IMPORT.name, value)
+                        else:
+                            newValue = value
                         updateDict[key] = newValue
 
                     file = open(self.modifyAtmFilePath, 'w')
