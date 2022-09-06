@@ -346,7 +346,11 @@ class vulcanController:
                 # positionTuple from MISTRA in the form of (1,0,1) - integers
                 # positionTuplePlusOne in the form of (2,0,1) - integers, first number plus one
                 positionList = list(positionTuple)
-                positionList[0] = positionList[0] + 1
+                print(type(positionList[0]))
+                
+                positionList[0] = int(positionList[0]) + 1
+                positionList[1] = int(positionList[1])
+                positionList[2] = int(positionList[2])
                 positionTuplePlusOne = tuple(positionList)
                 translatePositionString = self.translateCol(directions.IMPORT.name, positionTuplePlusOne)
                 
