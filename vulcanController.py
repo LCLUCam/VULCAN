@@ -660,10 +660,10 @@ class vulcanController:
             # returns heights and pressures (upper and lower bound), and temperature in that level
             # number density of all species at last time step
 
-            print(f"args: {args}")
-            columnInterestList = [self.translateCol(directions.IMPORT.name, col) for col in args[0]]            # [ (2,1,1), (2,0,2) ], convert to string
+            # args looks like ( [[(2,0,2)], 1000], )
+            columnInterestList = [self.translateCol(directions.IMPORT.name, col) for col in args[0][0]]            # [ (2,1,1), (2,0,2) ], convert to string
             
-            height = self.translateHeight(directions.IMPORT.name, args[1])                                      # in meters, multiply by 1e2 before putting into VULCAN
+            height = self.translateHeight(directions.IMPORT.name, args[0][1])                                      # in meters, multiply by 1e2 before putting into VULCAN
 
             for columnInterest in columnInterestList:
                 columnDict = {}
