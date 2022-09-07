@@ -194,7 +194,7 @@ class InitialAbun(object):
 
             # ===== from updateDict ===== #
             index = updateDict['index']
-            for sp, numberDensity in updateDict['Number Density'].items():
+            for sp, spNumberDensity in updateDict['Number Density'].items():
 
                 # updateDict from Mistra may have state of species in brackets, e.g., H2O(g)
                 # will need to remove brackets to match NASA9 species names
@@ -205,7 +205,7 @@ class InitialAbun(object):
                     translatedSp = sp
     
                 if translatedSp in species:
-                    y_ini[index][species.index(translatedSp)] = numberDensity[sp]
+                    y_ini[index][species.index(translatedSp)] = spNumberDensity
                 else:
                     print ('Vulcan - ' + translatedSp + " not included in Vulcan database.")
 
