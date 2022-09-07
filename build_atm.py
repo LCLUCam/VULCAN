@@ -192,10 +192,10 @@ class InitialAbun(object):
                     print ('Vulcan - ' + sp + " not included in the previous run.")
 
             index = updateDict['index']
-            for sp, numberDensity in updateDict['speciesNumberDensity'].items():
+            for sp, numberDensity in updateDict['Number Density'].items():
                 if sp in species:
                     
-                    y_ini[index][species.index(sp)] = updateDict['speciesNumberDensity'][sp]
+                    y_ini[index][species.index(sp)] = updateDict['Number Density'][sp]
                 else:
                     print ('Vulcan - ' + sp + " not included in Vulcan database.")
 
