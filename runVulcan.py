@@ -14,6 +14,8 @@ import scipy
 import scipy.optimize as sop
 import time, os, sys, json
 
+import matplotlib
+matplotlib.use('Agg')
 
 
 ##### =============== housekeeping =============== #####
