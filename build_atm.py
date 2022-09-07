@@ -185,19 +185,29 @@ class InitialAbun(object):
             with open(vulcan_cfg.vul_ini_file_path, 'rb') as handle:             # prevOutputPath == vulcan_cfg.vul_ini_file_path
                 vul_data = pickle.load(handle)
         
+            # ===== from previous Vulcan Run ===== #
             for sp in species:
                 if sp in vul_data['variable']['species']:
                     y_ini[:,species.index(sp)] = vul_data['variable']['y'][:,vul_data['variable']['species'].index(sp)]
                 else:
                     print ('Vulcan - ' + sp + " not included in the previous run.")
 
+            # ===== from updateDict ===== #
             index = updateDict['index']
             for sp, numberDensity in updateDict['Number Density'].items():
-                if sp in species:
-                    
-                    y_ini[index][species.index(sp)] = updateDict['Number Density'][sp]
+
+                # updateDict from Mistra may have state of species in brackets, e.g., H2O(g)
+                # will need to remove brackets to match NASA9 species names
+                if "(" in sp:
+                    print(f"Vulcan - removing brackets from {sp}")
+                    translatedSp = sp[:sp.find("(")]
                 else:
-                    print ('Vulcan - ' + sp + " not included in Vulcan database.")
+                    translatedSp = sp
+    
+                if translatedSp in species:
+                    y_ini[index][species.index(translatedSp)] = numberDensity[sp]
+                else:
+                    print ('Vulcan - ' + translatedSp + " not included in Vulcan database.")
 
             if vulcan_cfg.use_ion:
                 for sp in species: 
