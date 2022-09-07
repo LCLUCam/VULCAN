@@ -670,7 +670,7 @@ class vulcanController:
                         handle = open(path, 'rb')
                         vul_data = pickle.load(handle)
                         break
-                        
+
                 heightList = vul_data['atm']['zco']
                 upperHeight = list(filter(lambda x: True if x > height else False, heightList))[0]
                 lowerHeight = heightList[np.where(heightList == upperHeight)[0][0] - 1]
