@@ -37,7 +37,7 @@ def plot():
     # taking user input species and splitting into separate strings and then converting the list to a tuple
     plot_spec_tuple = tuple(vulcan_cfg.plot_spec)
 
-    # These are the "Tableau 20" colors as RGB.    
+    # These are the "Tableau 20" colors as RGB.
     tableau20 = [(31, 119, 180),(255, 127, 14),(44, 160, 44),(214, 39, 40),(148, 103, 189),(140, 86, 75), (227, 119, 194),(127, 127, 127),(188, 189, 34),(23, 190, 207),\
     (174, 199, 232),(255, 187, 120),(152, 223, 138),(255, 152, 150),(197, 176, 213),(196, 156, 148),(247, 182, 210),(199, 199, 199),(219, 219, 141),(158, 218, 229)] 
 
@@ -79,7 +79,7 @@ def plot():
         plt.ylim((data['atm']['pco'][0]/1e6,data['atm']['pco'][-1]/1e6))
         plt.ylabel("Pressure (bar)")
     else:
-        plt.ylim((data['atm']['zmco'][0]/1e5,data['atm']['zmco'][-1]/1e5)) 
+        plt.ylim((data['atm']['zmco'][0]/1e5,data['atm']['zmco'][-1]/1e5))
         plt.xlabel("Mixing Ratio")  
     
     plt.gca().set_xscale('log')       

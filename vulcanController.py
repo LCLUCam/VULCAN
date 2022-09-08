@@ -27,7 +27,7 @@ For S/N 2 - data export
 
 # ===== import public libraries ===== #
 from doctest import master
-import os, shutil, sys, time, subprocess
+import os, shutil, sys, time, subprocess, time
 import json, pickle
 import numpy as np
 import ast
@@ -52,6 +52,9 @@ class runType(str, Enum):
     EXPORT_ONLY = 'EXPORT_ONLY'
     NO_RUN = "NO_RUN"
 
+class outputType(str, Enum):
+    EVOLUTION = "EVOLUTION"
+    FINAL_PROFILE = "FINAL_PROFILE"
 
 # ===== vulcan controller class ===== #
 class vulcanController:
@@ -717,13 +720,72 @@ class vulcanController:
         return
 
 
-    def vulcanPlot(self):
+    def vulcanPlot(self, vulcanOutput):
         """ to call only after SCUM has finished running
+            "type": "EVOLUTION",
+            "columns": [ "222" ],
+            "species": ["SO2"],
+            "heightRangeList": [2000, 10000]
         """
         
-        with open(self.VulcanTimestampFilePath, 'rb') as handle:
-            VulcanTimestampFile = pickle.load(handle)
-        vulcanTimestampList = VulcanTimestampFile[Modules.VULCAN.name]
+        # ===== TYPE = EVOLUTION ===== #
+        if vulcanOutput["type"] == "EVOLUTION":
+            # extract relevant information - vulcanTimestampList
+            with open(self.VulcanTimestampFilePath, 'rb') as handle:
+                VulcanTimestampFile = pickle.load(handle)
+            vulcanTimestampList = VulcanTimestampFile[Modules.VULCAN.name]
+
+            # extract relevant information - columns, species tuple
+            columns = vulcanOutput["columns"]
+            speciesTuple = tuple(vulcanOutput["species"])
+            heightRangeList = vulcanOutput["heightRangeList"]
+            
+            # extract relevant information - total number of vulcan runs, vulcan run name
+            fileNameList = [f for f in os.listdir(self.VulcanRuntimeDir) if os.path.isfile(os.path.join(self.VulcanRuntimeDir, f))]
+            vulRunName = fileNameList[0].split("-run-")[0]
+            totalNumOfRuns = [int(f.split("-run-")[1][0]) for f in fileNameList]
+            zippedTime = zip(range(1, totalNumOfRuns + 1), vulcanTimestampList)             # zip timestamp and run number
+            
+            # extract relevant information
+
+            # by species
+            for species in speciesTuple:
+
+                # by column
+                for column in columns:
+
+                    # by time
+                    for runNumber, timestamp in zippedTime:
+
+                        # formulate file path
+                        vulFilepath = os.path.join(self.VulcanRuntimeDir, f"{vulRunName}-run-{runNumber}-{column}-output.vul")
+
+                        # pickle load
+                        with open(vulFilepath, 'rb') as handle:
+                            vul_data = pickle.load(handle)
+
+                        # extract list of level heights (meters) that lies between "heightRangeList": [2000, 10000]
+                        fullHeightList = vul_data['atm']['zmco']
+                        
+                        relevantLevelHeightList = list(filter(lambda x: True if x > heightRangeList[0] and x < heightRangeList[1] else False, fullHeightList))
+                        
+                        if len(relevantLevelHeightList) == 0:
+                            averageHeight = ( heightRangeList[0] + heightRangeList[1] ) / 2
+                            closestHeight = min(fullHeightList, key = lambda h: abs(h - averageHeight))
+                            relevantLevelHeightList = [closestHeight]
+
+                        relevantLevelHeightList.sort()
+                        relevantLevelIndexList = [np.where(height == fullHeightList) for height in relevantLevelHeightList]
+                        zippedLevelIndexHeight = zip(relevantLevelIndexList, relevantLevelHeightList)
+
+                        # print data
+                        time.sleep(10)
+                        if species in vul_data['variable']['species']:
+                            print(f"\nPrinting number density data for species {species}, column {column}")
+
+                            for levelIndex, height in zippedLevelIndexHeight:
+                                speciesNumberDensity = vul_data['variable']['y'][:,vul_data['variable']['species'].index(species)][levelIndex]
+                                print(f"{species}-{column}-{timestamp}-{height}: {speciesNumberDensity}")
 
         return
 
