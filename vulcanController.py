@@ -96,6 +96,7 @@ class vulcanController:
 
         self._VulcanRuntimeDir = os.path.join(self.outputDir, 'vul-runtime/')
         self._VulcanRuntimeLogFilePath = os.path.join(self.VulcanRuntimeDir, 'vul-log.txt')
+        self._VulcanTimestampFilePath = os.path.join(self.VulcanRuntimeDir, 'vul-timestamps.txt')
         
         # ===== load dictionaries for configuration ===== #
         self._globalParameters = json.load(open(self.globalParametersFilePath))
@@ -702,6 +703,30 @@ class vulcanController:
         return package
 
 
+    def vulcanSaveTimestamps(self, timestampList):
+        """ saves a list of timestamps corresponding to the end of each vulcan run
+        """
+
+        if os.path.exists(self.VulcanTimestampFilePath):
+            shutil.rmtree(self.VulcanTimestampFilePath)
+        
+        VulcanTimestampFile = open(self.VulcanTimestampFilePath, 'wb')
+        pickle.dump( {f"{Modules.VULCAN.name}": {"timestampList": timestampList}}, VulcanTimestampFile, protocol=4)
+        VulcanTimestampFile.close()
+
+        return
+
+
+    def vulcanPlot(self):
+        """ to call only after SCUM has finished running
+        """
+        
+        with open(self.VulcanTimestampFilePath, 'rb') as handle:
+            VulcanTimestampFile = pickle.load(handle)
+        vulcanTimestampList = VulcanTimestampFile[Modules.VULCAN.name]
+
+        return
+
     # ===== section on translation ===== #
     def translateCol(self, direction, col):
         # VULCAN has column as string '202'
@@ -804,3 +829,6 @@ class vulcanController:
     @property
     def vulcanRunType(self):
         return self._vulcanRunType
+    @property
+    def VulcanTimestampFilePath(self):
+        return self._VulcanTimestampFilePath
