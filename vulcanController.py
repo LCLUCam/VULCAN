@@ -99,6 +99,7 @@ class vulcanController:
 
         self._VulcanRuntimeDir = os.path.join(self.outputDir, 'vul-runtime/')
         self._VulcanRuntimeLogFilePath = os.path.join(self.VulcanRuntimeDir, 'vul-log.txt')
+        self._VulcanGrandoutputFilePath = os.path.join(self.VulcanRuntimeDir, 'vul-grand-output.txt')
         self._VulcanTimestampFilePath = os.path.join(self.VulcanRuntimeDir, 'vul-timestamps.txt')
         
         # ===== load dictionaries for configuration ===== #
@@ -748,7 +749,11 @@ class vulcanController:
             totalNumOfRuns = [int(f.split("-run-")[1][0]) for f in fileNameList]
             zippedTime = zip(range(1, totalNumOfRuns + 1), vulcanTimestampList)             # zip timestamp and run number
             
-            # extract relevant information
+            # extract relevant information, print to screen and write to text file.
+            if os.path.exists(self.VulcanGrandoutputFilePath):
+                shutil.rmtree(self.VulcanGrandoutputFilePath)
+            
+            VulcanGrandoutputFile = open(self.VulcanGrandoutputFilePath, 'w')
 
             # by species
             for species in speciesTuple:
@@ -787,7 +792,9 @@ class vulcanController:
 
                             for levelIndex, height in zippedLevelIndexHeight:
                                 speciesNumberDensity = vul_data['variable']['y'][:,vul_data['variable']['species'].index(species)][levelIndex]
-                                print(f"{species}-{column}-{timestamp}-{height}: {speciesNumberDensity}")
+                                line = f"{species}-{column}-{timestamp}-{height}: {speciesNumberDensity}"
+                                print(line)
+                                VulcanGrandoutputFile.write(f"{line}\n")
 
         return
 
@@ -896,3 +903,6 @@ class vulcanController:
     @property
     def VulcanTimestampFilePath(self):
         return self._VulcanTimestampFilePath
+    @property
+    def VulcanGrandoutputFilePath(self):
+        return self._VulcanGrandoutputFilePath
