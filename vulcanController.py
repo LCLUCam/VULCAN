@@ -762,6 +762,18 @@ class vulcanController:
 
             VulcanGrandoutputFile = open(self.VulcanGrandoutputFilePath, 'w')
 
+            for species in speciesList:
+                print(f"species: {species}")
+
+                # by column
+                for column in columns:
+                    # by time
+                    for runNumber, timestamp in zippedTime:
+                        line = f"{species}-{column}-{timestamp}"
+                        print(line)
+            quit()
+
+
 
             # by species
             for species in speciesList:
