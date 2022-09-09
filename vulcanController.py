@@ -731,41 +731,47 @@ class vulcanController:
             "species": ["SO2"],
             "heightRangeList": [2000, 10000]
         """
-        
+
         # ===== TYPE = EVOLUTION ===== #
         if vulcanOutput["type"] == "EVOLUTION":
             # extract relevant information - vulcanTimestampList
             with open(self.VulcanTimestampFilePath, 'rb') as handle:
                 VulcanTimestampFile = pickle.load(handle)
-            vulcanTimestampList = VulcanTimestampFile[Modules.VULCAN.name]
+            vulcanTimestampList = VulcanTimestampFile[Modules.VULCAN.name]["timestampList"]
+            print(f"vulcanTimestampList: {vulcanTimestampList}")
 
             # extract relevant information - columns, species tuple
             columns = vulcanOutput["columns"]
-            speciesTuple = tuple(vulcanOutput["species"])
+            print(f"columns: {columns}")
+            speciesList = list(vulcanOutput["species"])
+            print(f"speciesList: {speciesList}")
             heightRangeList = vulcanOutput["heightRangeList"]
-            
+            print(f"heightRangeList: {heightRangeList}")
+
             # extract relevant information - total number of vulcan runs, vulcan run name
             fileNameList = [f for f in os.listdir(self.VulcanRuntimeDir) if os.path.isfile(os.path.join(self.VulcanRuntimeDir, f))]
-            print(fileNameList)
             vulRunName = fileNameList[0].split("-run-")[0]
-            totalNumOfRuns = [int(f.split("-run-")[1][0]) for f in fileNameList]
+            totalNumOfRuns = int(max( [f.split("-run-")[1][0] for f in fileNameList if len(f.split("-run-"))> 1]))
+            print(f"Total number of Vulcan Runs: {totalNumOfRuns}")
+
             zippedTime = zip(range(1, totalNumOfRuns + 1), vulcanTimestampList)             # zip timestamp and run number
-            
+
             # extract relevant information, print to screen and write to text file.
             if os.path.exists(self.VulcanGrandoutputFilePath):
                 os.remove(self.VulcanGrandoutputFilePath)
-            
+
             VulcanGrandoutputFile = open(self.VulcanGrandoutputFilePath, 'w')
 
+
             # by species
-            for species in speciesTuple:
+            for species in speciesList:
+                print(f"species: {species}")
 
                 # by column
                 for column in columns:
-
                     # by time
                     for runNumber, timestamp in zippedTime:
-
+                        print(runNumber, timestamp)
                         # formulate file path
                         vulFilepath = os.path.join(self.VulcanRuntimeDir, f"{vulRunName}-run-{runNumber}-{column}-output.vul")
 
@@ -774,21 +780,24 @@ class vulcanController:
                             vul_data = pickle.load(handle)
 
                         # extract list of level heights (meters) that lies between "heightRangeList": [2000, 10000]
-                        fullHeightList = vul_data['atm']['zmco']
-                        
+                        fullHeightList = [height / 1e2 for height in vul_data['atm']['zmco']] # in meters
+                        print(f"fullHeightList:{fullHeightList}")
                         relevantLevelHeightList = list(filter(lambda x: True if x > heightRangeList[0] and x < heightRangeList[1] else False, fullHeightList))
-                        
+
                         if len(relevantLevelHeightList) == 0:
                             averageHeight = ( heightRangeList[0] + heightRangeList[1] ) / 2
                             closestHeight = min(fullHeightList, key = lambda h: abs(h - averageHeight))
                             relevantLevelHeightList = [closestHeight]
 
                         relevantLevelHeightList.sort()
-                        relevantLevelIndexList = [np.where(height == fullHeightList) for height in relevantLevelHeightList]
+                        relevantLevelIndexList = [np.where(height == fullHeightList)[0][0] for height in relevantLevelHeightList]
+                        print(f"relevantLevelHeightList: {relevantLevelHeightList}")
+                        print(f"relevantLevelIndexList: {relevantLevelIndexList}")
+
                         zippedLevelIndexHeight = zip(relevantLevelIndexList, relevantLevelHeightList)
+                        print(vul_data['variable']['species'])
 
                         # print data
-                        time.sleep(10)
                         if species in vul_data['variable']['species']:
                             print(f"\nPrinting number density data for species {species}, column {column}")
 
