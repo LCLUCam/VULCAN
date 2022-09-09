@@ -746,6 +746,7 @@ class vulcanController:
             
             # extract relevant information - total number of vulcan runs, vulcan run name
             fileNameList = [f for f in os.listdir(self.VulcanRuntimeDir) if os.path.isfile(os.path.join(self.VulcanRuntimeDir, f))]
+            print(fileNameList)
             vulRunName = fileNameList[0].split("-run-")[0]
             totalNumOfRuns = [int(f.split("-run-")[1][0]) for f in fileNameList]
             zippedTime = zip(range(1, totalNumOfRuns + 1), vulcanTimestampList)             # zip timestamp and run number
