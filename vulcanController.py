@@ -719,6 +719,7 @@ class vulcanController:
         VulcanTimestampFile = open(self.VulcanTimestampFilePath, 'wb')
         pickle.dump( {f"{Modules.VULCAN.name}": {"timestampList": timestampList}}, VulcanTimestampFile, protocol=4)
         VulcanTimestampFile.close()
+        print(timestampList)
 
         return
 
