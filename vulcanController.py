@@ -627,7 +627,7 @@ class vulcanController:
 
                 rawSpDict = {}
                 for sp in vul_data['variable']['species']:
-                    rawSpDict[sp] = vul_data['variable']['y'][:,vul_data['variable']['species'].index(sp)][0]
+                    rawSpDict[sp] = self.translateNumDen(vul_data['variable']['y'][:,vul_data['variable']['species'].index(sp)][0])
                 rawColumnDict['Number Density'] = rawSpDict
 
                 rawOutputAll[column] = rawColumnDict
@@ -699,7 +699,7 @@ class vulcanController:
 
                 spDict = {}
                 for sp in vul_data['variable']['species']:
-                    spDict[sp] = vul_data['variable']['y'][:,vul_data['variable']['species'].index(sp)][lowerHeightIndex]
+                    spDict[sp] = self.translateNumDen(vul_data['variable']['y'][:,vul_data['variable']['species'].index(sp)][lowerHeightIndex])
 
                 columnDict['Number Density'] = spDict
                 columnDict['index'] = int(lowerHeightIndex)
@@ -731,7 +731,7 @@ class vulcanController:
             "species": ["SO2"],
             "heightRangeList": [2000, 10000]
         """
-
+        quit()
         # ===== TYPE = EVOLUTION ===== #
         if vulcanOutput["type"] == "EVOLUTION":
             # extract relevant information - vulcanTimestampList
@@ -771,7 +771,7 @@ class vulcanController:
                     for runNumber, timestamp in zippedTime:
                         line = f"{species}-{column}-{timestamp}"
                         print(line)
-            quit()
+
 
 
 
@@ -849,6 +849,9 @@ class vulcanController:
         if direction == directions.IMPORT.name:
                 return height * 1e2
 
+    def translateNumDen(self, numDen):
+        # VULCAN has number density in ppm, multiply by 1e6 to get number density per m3
+        return numDen * 1e6
 
     def translateSpecies(self, species):
         """
