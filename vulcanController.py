@@ -714,7 +714,7 @@ class vulcanController:
         """
 
         if os.path.exists(self.VulcanTimestampFilePath):
-            shutil.rmtree(self.VulcanTimestampFilePath)
+            os.remove(self.VulcanTimestampFilePath)
         
         VulcanTimestampFile = open(self.VulcanTimestampFilePath, 'wb')
         pickle.dump( {f"{Modules.VULCAN.name}": {"timestampList": timestampList}}, VulcanTimestampFile, protocol=4)
@@ -751,7 +751,7 @@ class vulcanController:
             
             # extract relevant information, print to screen and write to text file.
             if os.path.exists(self.VulcanGrandoutputFilePath):
-                shutil.rmtree(self.VulcanGrandoutputFilePath)
+                os.remove(self.VulcanGrandoutputFilePath)
             
             VulcanGrandoutputFile = open(self.VulcanGrandoutputFilePath, 'w')
 
