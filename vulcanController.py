@@ -296,8 +296,10 @@ class vulcanController:
         # ===== S/N 2 ===== #
         cfgFile.write('\n\n\n# ================== global parameters - auto generated ================== #')
         for mother in self.globalParameters.keys():
-            for daughter in self.globalParameters[mother].keys():
-                cfgFile.write(f'\n{mother}_{daughter} = {self.globalParameters[mother][daughter]}')
+            if mother != "vulcan-output":
+                for daughter in self.globalParameters[mother].keys():
+                
+                    cfgFile.write(f'\n{mother}_{daughter} = {self.globalParameters[mother][daughter]}')
 
         # ===== S/N 3 ===== #
         cfgFile.write('\n\n\n# ================== directories - auto generated ================== #')
