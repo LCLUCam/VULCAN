@@ -95,7 +95,8 @@ class vulcanController:
         self._vulcanDirFilePath = os.path.join(self.vulcanInputDir, 'VulcanDir.json')
         self._cfgComparator = os.path.join(self.vulcanInputDir, 'VulcanCfgComparator.txt')
 
-        self._vulcanFrameworkDir = os.path.join(self.masterDir, 'vulcan_framework/')
+        # self._vulcanFrameworkDir = os.path.join(self.masterDir, 'vulcan_framework/')
+        self._vulcanFrameworkDir = os.path.join(self.masterDir, 'VULCAN/')
         self._cfgFilePath = os.path.join(self.vulcanFrameworkDir, 'vulcan_cfg.py')
         self._makeChemFuns = os.path.join(self.vulcanFrameworkDir, 'make_chem_funs.py')
 
