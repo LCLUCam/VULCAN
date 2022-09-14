@@ -88,6 +88,8 @@ class vulcanController:
 
         # ===== construct directories and file paths ===== #
         self._vulcanInputDir = os.path.join(self.inputDir, 'VULCAN/')
+        print(f"self.vulcanInputDir: {self.vulcanInputDir}")
+        quit()
         self._globalParametersFilePath = os.path.join(self.inputDir, 'globalParameters.json')
         self._modelParametersFilePath = os.path.join(self.vulcanInputDir, 'VulcanBaseParameters-2.txt')
         self._vulcanPopulatorFilePath = os.path.join(self.vulcanInputDir, 'VulcanPopulator.json')
