@@ -125,7 +125,7 @@ class vulcanController:
         # ===== running Vulcan ===== #
         # initialization functions
         self._modelParametersVulcan = self.readModelParametersVulcan()
-        self.makeCfgFile()            
+        self.makeCfgFile()
         
         # sorts out output matters
         self.vulcanOutput()
@@ -535,7 +535,7 @@ class vulcanController:
 
         columns = []
         for x in range(n.world['atmosphereDim'][0]):
-            for y in range(n.world['atmosphereDim'][0]):
+            for y in range(n.world['atmosphereDim'][1]):
                 columns.append(f'2{x}{y}')
 
         return columns
@@ -638,7 +638,10 @@ class vulcanController:
             # loop through each column, find nearest neighbours, average and then translate
             for column in latestRunColumns:
                 avgColumnDict = {}
+                print(f"column:{column}")
+                
                 nearestListColumns = list(set(self.nearestColumns(column)).intersection(latestRunColumns))
+                print(f"nearestListColumns:{nearestListColumns}")
                 
                 avgLowerHeight = np.average([rawOutputAll[col]['lowerHeight'] for col in nearestListColumns])
                 avgUpperHeight = np.average([rawOutputAll[col]['upperHeight'] for col in nearestListColumns])
