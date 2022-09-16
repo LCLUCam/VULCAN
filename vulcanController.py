@@ -635,6 +635,7 @@ class vulcanController:
 
                 rawOutputAll[column] = rawColumnDict
 
+            print(f"latestRunColumns: {latestRunColumns}")
             # loop through each column, find nearest neighbours, average and then translate
             for column in latestRunColumns:
                 avgColumnDict = {}
@@ -642,7 +643,7 @@ class vulcanController:
                 
                 nearestListColumns = list(set(self.nearestColumns(column)).intersection(latestRunColumns))
                 print(f"nearestListColumns:{nearestListColumns}")
-                
+
                 avgLowerHeight = np.average([rawOutputAll[col]['lowerHeight'] for col in nearestListColumns])
                 avgUpperHeight = np.average([rawOutputAll[col]['upperHeight'] for col in nearestListColumns])
 
