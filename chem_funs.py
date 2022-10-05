@@ -1,10 +1,16 @@
 #!/usr/bin/python
+#!/usr/bin/env python3
 
+# import public libraries
 from scipy import *
 import numpy as np
+import os
+
+# import VULCAN libraries
+
+vulcanFrameworkDirPath = os.path.dirname(os.path.realpath(__file__))
 from phy_const import kb, Navo
 import vulcan_cfg
-
 '''
 ## Reaction ##
 
@@ -11685,4 +11691,3 @@ def neg_symjac(y, M, k):
     dfdy[indx[64], indx[63]] = -(0)
     dfdy[indx[64], indx[64]] = -(-M*k[702] - k[807] - k[809])
     return dfdy 
-

@@ -14,7 +14,7 @@ from scipy import sparse
 from scipy import interpolate
 import matplotlib.pyplot as plt
 import matplotlib.legend as lg
-import time, os, pickle
+import time, os, pickle, shutil
 import csv, ast
 # TEST numba
 # from numba import njit, jit
@@ -537,7 +537,7 @@ class ReadRate(object):
             # reading in temperature dependent cross sections
             if sp in vulcan_cfg.T_cross_sp: 
                 T_list = []
-                for temp_file in os.listdir("thermo/photo_cross/" + sp + "/"):
+                for temp_file in os.listdir(os.path.join(vulcan_cfg.cross_folder, sp + "/")):
                     if temp_file.startswith(sp) and temp_file.endswith("K.csv"):
                         temp = temp_file
                         temp = temp.replace(sp,''); temp = temp.replace('_cross_',''); temp = temp.replace('K.csv','')
@@ -584,7 +584,7 @@ class ReadRate(object):
         else: bins = np.arange(bin_min,bin_max, var.dbin1)
         var.bins = bins
         var.nbin = len(bins)
-        
+
         # all variables that depend on the size of nbins
         # the direct beam (staggered)
         var.sflux = np.zeros( (nz+1, var.nbin) )
@@ -766,7 +766,7 @@ class ReadRate(object):
                     for i in range(1,var.ion_branch[sp]+1): 
                         var.cross_Jion[(sp,i)][n] = inter_cross_Jion(ld) * ion_inter_ratio[i](ld)
         # end of if vulcan_cfg.use_ion == True: 
-                
+        
         # reading in cross sections of Rayleigh Scattering
         for sp in vulcan_cfg.scat_sp:
             scat_raw[sp] = np.genfromtxt(vulcan_cfg.cross_folder + 'rayleigh/' + sp+'_scat.txt',dtype=float,\
@@ -1017,23 +1017,21 @@ class Integration(object):
     
     def stop(self, var, para, atm):
         '''
-        To check the convergence criteria and stop the integration 
+        To check the convergence criteria and stop the integration
         '''
+
         if var.t > vulcan_cfg.trun_min and para.count > vulcan_cfg.count_min and self.conv(var, para, atm):
-            print ('Integration successful with ' + str(para.count) + ' steps and long dy, long dydt = ' + str(var.longdy) + ' ,' + str(var.longdydt) + '\nActinic flux change: ' + '{:.2E}'.format(var.aflux_change)) 
-            self.output.print_end_msg(var, para)
+            self.output.print_end_msg(var, para, 'steady-state')
             para.end_case = 1
             return True
-        elif var.t > vulcan_cfg.runtime:
-            print ("After ------- %s seconds -------" % ( time.time()- para.start_time ) + ' s CPU time')
-            print ('Integration not completed...\nMaximal allowed runtime exceeded ('+ \
-            str (vulcan_cfg.runtime) + ' sec)!')
+
+        elif var.t >= vulcan_cfg.runtime:
+            self.output.print_end_msg(var, para, 'runtime exceed')
             para.end_case = 2
             return True
+
         elif para.count > vulcan_cfg.count_max:
-            print ("After ------- %s seconds -------" % ( time.time()- para.start_time ) + ' s CPU time')
-            print ('Integration not completed...\nMaximal allowed steps exceeded (' + \
-            str (vulcan_cfg.count_max) + ')!')
+            self.output.print_end_msg(var, para, 'steps exceed')
             para.end_case = 3
             return True
     
@@ -1660,7 +1658,7 @@ class ODESolver(object):
         Hpi = atm.Hpi.copy()
         
         
-        dfdy = achemjac(y, atm.M, var.k)
+        dfdy = neg_achemjac(y, atm.M, var.k)
         j_indx = []
         
         for j in range(nz):
@@ -2036,7 +2034,7 @@ class ODESolver(object):
         else: var.y, var.ymix = y, y/np.vstack(np.sum(y,axis=1))
         # TEST condensation excluding non-gaseous species
         
-        return var , para
+        return var, para
         
     def loss(self, data_var): 
         
@@ -2634,130 +2632,139 @@ class Ros2(ODESolver):
                   
         return var, para                    
         
-    def step_size(self, var, para, dt_var_min = vulcan_cfg.dt_var_min, dt_var_max = vulcan_cfg.dt_var_max, dt_min = vulcan_cfg.dt_min, dt_max = vulcan_cfg.dt_max):  
+    def step_size(self, var, para):
         """
         step-size control by delta(truncation error) for the Rosenbrock method
         """
-        h = var.dt
+        step_size = var.dt
         delta = para.delta
         rtol = vulcan_cfg.rtol
                
-        if delta==0: delta = 0.01*rtol
-        h_factor = 0.9*(rtol/delta)**0.5 # 0.9 is simply a safety factor
-        h_factor = np.maximum(h_factor, dt_var_min)    
-        h_factor = np.minimum(h_factor, dt_var_max)    
+        if delta==0: 
+            delta = 0.01*rtol
+        h_factor = 0.9*(rtol/delta)**0.5                    # 0.9 is simply a safety factor
+        h_factor = np.maximum(h_factor, vulcan_cfg.dt_var_min)    
+        h_factor = np.minimum(h_factor, vulcan_cfg.dt_var_max)    
         
-        h *= h_factor
-        h = np.maximum(h, dt_min)
-        h = np.minimum(h, dt_max)
+        step_size *= h_factor
+        step_size = np.maximum(step_size, vulcan_cfg.dt_min)
+        step_size = np.minimum(step_size, vulcan_cfg.dt_max)
         
+        # adjust dt to hit runtime
+        if var.t + step_size > vulcan_cfg.runtime:
+            step_size = vulcan_cfg.runtime - var.t
+
         # store the adopted dt
-        var.dt = h
-        
+        var.dt = step_size
         return var
             
     
 class Output(object):
-    
-    def __init__(self):
-        
-        output_dir, out_name, plot_dir = vulcan_cfg.output_dir, vulcan_cfg.out_name, vulcan_cfg.plot_dir
 
-        if not os.path.exists(output_dir): os.makedirs(output_dir)
-        if not os.path.exists(plot_dir): os.makedirs(plot_dir)
+    def __init__(self):
+        # essentially do nothing
+        
+        """
+        if not os.path.exists(self.output_dir): os.makedirs(self.output_dir)
+        if not os.path.exists(self.plot_dir): os.makedirs(self.plot_dir)
         if vulcan_cfg.use_save_movie == True:
             if not os.path.exists(vulcan_cfg.movie_dir): os.makedirs(vulcan_cfg.movie_dir)
-        
-        if os.path.isfile(output_dir+out_name):
-            # Fix Python 3.x and 2.x.
-            # try: input = raw_input
-            # except NameError: pass
-            # input("  The output file: " + str(out_name) + " already exists.\n"
-            #           "  Press enter to overwrite the existing file,\n"
-            #           "  or Ctrl-Z and Return to leave and choose a different out_name in vulcan_cfg.")
-            
-            print ('Warning... the output file: ' + str(out_name) + ' already exists.\n')
-        
+        if os.path.isfile(os.path.join(self.output_dir, self.outname)):
+            print ('Warning... the output file: ' + str(self.out_name) + ' already exists.\n')
+        """
+
     def print_prog(self, var, para):
         indx_max = np.nanargmax(para.where_varies_most)
-        print ('Elapsed time: ' +"{:.2e}".format(var.t) + ' || Step number: ' + str(para.count) + '/' + str(vulcan_cfg.count_max) ) 
-        print ('longdy = ' + "{:.2e}".format(var.longdy) + '      || longdy/dt = ' + "{:.2e}".format(var.longdydt) + '  || dt = '+ "{:.2e}".format(var.dt) )      
-        print ('from nz = ' + str(int(indx_max/ni)) + ' and ' + species[indx_max%ni])
-        print ('------------------------------------------------------------------------' )
-        
-        
-    def print_end_msg(self, var, para ): 
-        print ("After ------- %s seconds -------" % ( time.time()- para.start_time ) + ' s CPU time') 
-        print (vulcan_cfg.out_name[:-4] + ' has successfully run to steady-state with ' + str(para.count) + ' steps and ' + str("{:.2e}".format(var.t)) + ' s' )
-        print ('long dy = ' + str(var.longdy) + ' and long dy/dt = ' + str(var.longdydt) )
-        
-        print ('total atom loss:')
-        for atom in vulcan_cfg.atom_list: print (atom + ': ' + str(var.atom_loss[atom]) + ' ')
-      
-        print ('negative solution counter:')
-        print (para.nega_count)
-        print ('loss rejected counter:')
-        print (para.loss_count)
-        print ('delta rejected counter:')
-        print (para.delta_count)
-        if vulcan_cfg.use_shark == True: print ("It's a long journey to this shark planet. Don't stop bleeding.")
-        print ('------ Live long and prosper \V/ ------') 
-        
-        
-        
-    def save_cfg(self, dname):
-        output_dir, out_name = vulcan_cfg.output_dir, vulcan_cfg.out_name
-        if not os.path.exists(output_dir):
-            print ('The output directory assigned in vulcan_cfg.py does not exist.')
-            print( 'Directory ' , output_dir,  " created.")
-            os.mkdir(output_dir)
+        time_elapsed, runtime = "{:.2e}".format(var.t), "{:.2e}".format(vulcan_cfg.runtime)
+        longdy, longdydt, dt  = "{:.2e}".format(var.longdy), "{:.2e}".format(var.longdydt), "{:.2e}".format(var.dt)
 
-        # copy the vulcan_cfg.py file
-        with open('vulcan_cfg.py' ,'r') as f:
-            cfg_str = f.read()
-        with open(dname + '/' + output_dir + "cfg_" + out_name[:-3] + "txt", 'w') as f: f.write(cfg_str)
+        print (f'\nVulcan - sim. time = {time_elapsed} / {runtime} s   |   step no. = {para.count} / {vulcan_cfg.count_max}')
+        print (f'Vulcan - longdy = {longdy}   |  longdy/dt = {longdydt}   |   dt = {dt}')
+        print (f'Vulcan - vulcan_cfg.nz = {str(int(indx_max/ni))} and {species[indx_max%ni]}')
+
+    def print_end_msg(self, var, para, end_type):
+        # for running to steady state
+        time_elapsed, runtime = "{:.2e}".format(var.t), "{:.2e}".format(vulcan_cfg.runtime)
+        longdy, longdydt, dt  = "{:.2e}".format(var.longdy), "{:.2e}".format(var.longdydt), "{:.2e}".format(var.dt)
+        aflux_change = '{:.2E}'.format(var.aflux_change)
     
-    def save_out(self, var, atm, para, dname): 
-        output_dir, out_name = vulcan_cfg.output_dir, vulcan_cfg.out_name
-        output_file = dname + '/' + output_dir + out_name
+        end_msg = []
+        end_msg.append(f'\n{vulcan_cfg.out_name}-run-{vulcan_cfg.run_num}: successful run')
+        end_msg.append(f'exit type = {end_type}   |   sim. time = {time_elapsed} / {runtime} s   |   step no. = {para.count} / {vulcan_cfg.count_max}')
+        end_msg.append(f'longdy = {longdy}   |  longdy/dt = {longdydt}   |   dt = {dt}   |   Actinic flux change = {aflux_change}')
+        end_msg.append(f'negative solution counter: {para.nega_count}   |   loss rejected counter: {para.loss_count}   |   delta rejected counter: {para.delta_count}')
+        end_msg.append('total atom loss = ')
+        for atom in vulcan_cfg.atom_list:
+            end_msg.append(f' {atom} =  {str(var.atom_loss[atom])}')
+        end_msg.append(f'CPU time = {time.time() - para.start_times[0]} s')
         
-        if not os.path.exists(output_dir):
-            print ('The output directory assigned in vulcan_cfg.py does not exist.')
-            print( 'Directory ' , output_dir,  " created.")
-            os.mkdir(output_dir)
-            
-        # convert lists into numpy arrays
+        log = open(vulcan_cfg.vulcan_runtime_log, 'a+')
+        for msg in end_msg:
+            print(msg)
+            log.write(msg+'\n')
+        log.close()
+
+        """
+        if vulcan_cfg.use_shark: 
+            print ("It's a long journey to this shark planet. Don't stop bleeding.")
+        print ('------ Live long and prosper \V/ ------')
+        """
+
+    def save_out(self, var, atm, para):
+
+        # saving VAR: convert lists into numpy arrays
         for key in var.var_evol_save:
             as_nparray = np.array(getattr(var, key))
             setattr(var, key, as_nparray)
-        
-        # plotting
-        if vulcan_cfg.use_plot_evo == True: 
+
+        # saving VAR: if plotting == True
+        if vulcan_cfg.use_plot_evo:
             self.plot_evo(var, atm)
-        if vulcan_cfg.use_plot_end == True:
+        if vulcan_cfg.use_plot_end:
             self.plot_end(var, atm, para)
         else: plt.close()
-        
-        # making the save dict
+
+        # saving VAR: making the save dict
         var_save = {'species':species, 'nr':nr}
-        
-        for key in var.var_save:
-            var_save[key] = getattr(var, key)
-        if vulcan_cfg.save_evolution == True:
-            # slicing time-sequential data to reduce ouput filesize
+        if vulcan_cfg.var_save_mode == 'lite':
+            for key in vulcan_cfg.var_save_lite:
+                var_save[key] = getattr(var, key)
+        else:
+            for key in vulcan_cfg.var_save_full:
+                var_save[key] = getattr(var, key)
+            
+        # saving VAR: slicing time-sequential data to reduce ouput filesize
+        if vulcan_cfg.save_evolution:
             fq = vulcan_cfg.save_evo_frq
             for key in var.var_evol_save:
                 as_nparray = getattr(var, key)[::fq]
                 setattr(var, key, as_nparray)
                 var_save[key] = getattr(var, key)
 
-        with open(output_file, 'wb') as outfile:
-            if vulcan_cfg.output_humanread == True: # human-readable form, less efficient 
-                outfile.write(str({'variable': var_save, 'atm': vars(atm), 'parameter': vars(para)}))
-            else:
-                # the protocol must be <= 2 for python 2.X
-                pickle.dump( {'variable': var_save, 'atm': vars(atm), 'parameter': vars(para) }, outfile, protocol=4)
-                # how to add  'config': vars(vulcan_cfg) ?
+        # saving the output file and recording that in the log file
+        if vulcan_cfg.output_humanread:
+            output_file_dir = os.path.join(vulcan_cfg.vulcan_runtime_dir, f'{vulcan_cfg.out_name}-run-{vulcan_cfg.run_num}-output.txt')
+            outfile = open(output_file_dir, 'w')
+            outfile.write(str({'variable': var_save, 'atm': vars(atm), 'parameter': vars(para)}))
+        else:
+            output_file_dir = os.path.join(vulcan_cfg.vulcan_runtime_dir, f'{vulcan_cfg.out_name}-run-{vulcan_cfg.run_num}-output.vul')
+            outfile = open(output_file_dir, 'wb')
+            pickle.dump( {'variable': var_save, 'atm': vars(atm), 'parameter': vars(para) }, outfile, protocol=4)
+        outfile.close()
+
+        log = open(vulcan_cfg.vulcan_runtime_log, 'a+')
+        log.write(f'OutputFilePath: {output_file_dir}')
+        log.close()
+
+    
+    def save_cfg(self):
+        """ save vulcan_cfg.py to folder ./output/vul-runtime
+            example: vulcan-run-1-cfgFile.txt
+        """
+        src = os.path.join(vulcan_cfg.vulcan_framework_dir, f'vulcan_cfg.py')
+        dst = os.path.join(vulcan_cfg.vulcan_runtime_dir, f'{vulcan_cfg.out_name}-run-{vulcan_cfg.run_num}-cfgFile.txt')
+        shutil.copyfile(src, dst)
+        return
         
             
     def plot_update(self, var, atm, para):
