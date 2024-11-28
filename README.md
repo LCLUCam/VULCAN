@@ -4,7 +4,7 @@
 
 [VULCAN](https://github.com/exoclime/VULCAN) is a photochemical kinetics integrator, created by Shang-Min (Shami) Tsai, for exoplanetary atmospheres written entirely using Python. VULCAN is implemented with the equilibrium chemistry code [FastChem](https://github.com/exoclime/FastChem), created by Daniel Kitzmann and Joachim Stock, which can be used to initialise a state in chemical equilibrium.
 
-The Vulcan Framework within SCUM preserves the scientific methodology of VULCAN while extending its capabilities to 3D simulation and coupling its lower boundary to [Mistra](https://github.com/Mistra-UEA/Mistra), a 1D physical and chemical model of the marine boundary layer (MBL). Moreover, VULCAN is also integrated with the perturbations module, which enables direct modification of the chemical composition of the atmopshere.
+The present code repository (Vulcan Framework) is part of a larger project to develop an integrated software toolkit called SCUM (Surface-Coupled Upper-atmosphere Model) to model the multi-phase chemistry in diverse planetary atmospheres coupled to surficial aqueous geochemistry. Forked from VULCAN, the Vulcan Framework within SCUM preserves the scientific methodology of VULCAN while extending its capabilities to 3D simulation and coupling its lower boundary to [Mistra](https://github.com/Mistra-UEA/Mistra), a 1D physical and chemical model of the marine boundary layer (MBL). Moreover, this Vulcan Framework is also integrated with the perturbations module, which enables direct modification of the chemical composition of the atmopshere to simulate drastic planetary activities, such as volcanic eruptions.
 
 ## Modus Operandi
 
